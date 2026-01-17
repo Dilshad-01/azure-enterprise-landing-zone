@@ -1,0 +1,143 @@
+# Azure Landing Zone Configuration
+# Copy this file to terraform.tfvars and customize with your values
+
+# Azure Provider Configuration
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Organization Details
+organization_name = "YourOrganization"
+environment       = "production" # production, nonproduction, sandbox
+
+# Management Group Configuration
+management_groups = {
+  platform = {
+    display_name = "Platform"
+    subscriptions = []
+  }
+  landing-zones = {
+    display_name = "Landing Zones"
+    subscriptions = []
+  }
+  production = {
+    display_name     = "Production"
+    parent_group     = "landing-zones"
+    subscriptions    = []
+  }
+  nonproduction = {
+    display_name     = "Non-Production"
+    parent_group     = "landing-zones"
+    subscriptions    = []
+  }
+  sandbox = {
+    display_name     = "Sandbox"
+    parent_group     = "landing-zones"
+    subscriptions    = []
+  }
+}
+
+# Hub Network Configuration
+hub_network = {
+  name                = "VNET_djs01224"
+  address_space       = ["10.0.0.0/16"]
+  location            = "East US"
+  resource_group_name = "RG_djs01224"
+  
+  subnets = {
+    "AzureFirewallSubnet"     = "10.0.0.0/26"
+    "AzureBastionSubnet"      = "10.0.0.64/26"
+    "GatewaySubnet"           = "10.0.0.128/27"
+    "SharedServicesSubnet"    = "10.0.1.0/24"
+    "DMZSubnet"               = "10.0.2.0/24"
+  }
+}
+
+# Azure Firewall Configuration
+firewall = {
+  name              = "FW_djs01224"
+  sku_name          = "AZFW_VNet"
+  sku_tier          = "Standard"
+  threat_intel_mode = "Alert"
+}
+
+# Log Analytics Workspace
+log_analytics = {
+  name                = "LAW_djs01224"
+  sku                 = "PerGB2018"
+  retention_in_days   = 90
+}
+
+# Key Vault Configuration
+key_vault = {
+  name                = "KV_djs01224"
+  sku_name            = "standard"
+  enabled_for_deployment = true
+  enabled_for_disk_encryption = true
+  enabled_for_template_deployment = true
+}
+
+# Bastion Configuration
+bastion = {
+  name = "BASTION_djs01224"
+  sku  = "Standard"
+}
+
+# Spoke Network Configuration (Production)
+spoke_production = {
+  name                = "VNET_djs01224_01"
+  address_space       = ["10.1.0.0/16"]
+  location            = "East US"
+  resource_group_name = "RG_djs01224_01"
+  
+  subnets = {
+    "AppSubnet"    = "10.1.1.0/24"
+    "DataSubnet"   = "10.1.2.0/24"
+    "WebSubnet"    = "10.1.3.0/24"
+  }
+}
+
+# Spoke Network Configuration (Non-Production)
+spoke_nonproduction = {
+  name                = "VNET_djs01224_02"
+  address_space       = ["10.10.0.0/16"]
+  location            = "East US"
+  resource_group_name = "RG_djs01224_02"
+  
+  subnets = {
+    "AppSubnet"    = "10.10.1.0/24"
+    "DataSubnet"   = "10.10.2.0/24"
+    "WebSubnet"    = "10.10.3.0/24"
+  }
+}
+
+# Tags
+common_tags = {
+  Environment   = "Production"
+  CostCenter    = "IT-Infrastructure"
+  Owner         = "DevOps Team"
+  Project       = "Azure Landing Zone"
+  ManagedBy     = "Terraform"
+  Compliance    = "SOC2"
+}
+
+# RBAC Configuration
+rbac = {
+  platform_admin_group = "Platform Administrators"
+  network_admin_group  = "Network Administrators"
+  security_admin_group = "Security Administrators"
+}
+
+# Policy Configuration
+policies = {
+  enable_security_policies    = true
+  enable_network_policies     = true
+  enable_compliance_policies   = true
+  enable_cost_policies        = true
+}
+
+# Cost Management
+cost_management = {
+  budget_amount = 10000 # Monthly budget in USD
+  alert_thresholds = [50, 75, 90, 100] # Percentage thresholds
+}
+

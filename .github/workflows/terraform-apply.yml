@@ -1,0 +1,106 @@
+name: Terraform Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - hub
+          - management-groups
+          - spoke-production
+          - spoke-nonproduction
+      auto_approve:
+        description: 'Auto-approve deployment'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches:
+      - main
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/terraform-apply.yml'
+
+env:
+  TF_VERSION: '1.5.0'
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ github.event.inputs.environment || 'production' }}
+    defaults:
+      run:
+        working-directory: ./infrastructure
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: |
+            {
+              "clientId": "${{ env.AZURE_CLIENT_ID }}",
+              "clientSecret": "${{ env.AZURE_CLIENT_SECRET }}",
+              "subscriptionId": "${{ env.AZURE_SUBSCRIPTION_ID }}",
+              "tenantId": "${{ env.AZURE_TENANT_ID }}"
+            }
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan
+          path: infrastructure/management-groups/
+
+      - name: Terraform Init
+        run: |
+          cd management-groups
+          terraform init
+
+      - name: Terraform Apply
+        id: apply
+        run: |
+          cd management-groups
+          if [ "${{ github.event.inputs.auto_approve }}" == "true" ] || [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            terraform apply -auto-approve tfplan
+          else
+            terraform apply tfplan
+          fi
+        continue-on-error: true
+
+      - name: Post-Deployment Validation
+        if: steps.apply.outcome == 'success'
+        run: |
+          echo "Running post-deployment validation..."
+          # Add validation scripts here
+          # Example: az vm list --resource-group rg-hub-network
+
+      - name: Notify on Success
+        if: steps.apply.outcome == 'success'
+        run: |
+          echo "✅ Deployment successful!"
+          # Add notification logic (Slack, Teams, Email)
+
+      - name: Notify on Failure
+        if: steps.apply.outcome == 'failure'
+        run: |
+          echo "❌ Deployment failed!"
+          # Add notification logic (Slack, Teams, Email)
+          exit 1
+
