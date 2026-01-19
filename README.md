@@ -427,14 +427,6 @@ graph LR
 
 ### Shared Services Model
 
-**Hub Subscription Costs** (Shared across all workloads)
-- **Azure Firewall**: ~$1.25/hour + data processing (~$0.12/GB)
-- **VPN Gateway**: ~$0.19/hour (Basic) to ~$0.50/hour (VpnGw2)
-- **ExpressRoute Gateway**: ~$0.50/hour (Standard) to ~$1.25/hour (Ultra)
-- **Log Analytics Workspace**: ~$2.30/GB ingested (first 5GB free)
-- **Key Vault**: ~$0.03/10,000 transactions
-- **Bastion Host**: ~$0.19/hour + outbound data transfer
-
 **Cost Allocation**
 - Hub costs allocated to workload subscriptions via tags
 - Cost center tags enable chargeback to business units
